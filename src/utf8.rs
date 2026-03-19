@@ -120,6 +120,25 @@ impl<'a> Iterator for Chars<'a> {
         self.bs = &self.bs[size..];
         Some(ch)
     }
+
+    #[inline]
+    fn count(mut self) -> usize {
+        let mut count = 0;
+        loop {
+            // ASCII fast path.
+            let size = ascii::first_non_ascii_byte(self.bs);
+            count += size;
+            self.bs = &self.bs[size..];
+
+            let (_ch, size) = decode(self.bs);
+            if size == 0 {
+                return count;
+            } else {
+                count += 1;
+                self.bs = &self.bs[size..];
+            }
+        }
+    }
 }
 
 impl<'a> DoubleEndedIterator for Chars<'a> {
