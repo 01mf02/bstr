@@ -125,10 +125,15 @@ impl<'a> Iterator for Chars<'a> {
     fn count(mut self) -> usize {
         let mut count = 0;
         loop {
-            // ASCII fast path.
-            let size = ascii::first_non_ascii_byte(self.bs);
-            count += size;
-            self.bs = &self.bs[size..];
+            // ASCII fast path taken if two consecutive ASCII chars found
+            match self.bs {
+                [fst, snd, ..] if *fst <= 0x7F && *snd <= 0x7F => {
+                    let size = ascii::first_non_ascii_byte(self.bs);
+                    count += size;
+                    self.bs = &self.bs[size..];
+                }
+                _ => (),
+            }
 
             let (_ch, size) = decode(self.bs);
             if size == 0 {
